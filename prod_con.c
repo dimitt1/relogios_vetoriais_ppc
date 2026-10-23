@@ -56,7 +56,9 @@ void receiveClock(Clock msg, int id){
       clocks[id].p[k] = max(clocks[id].p[k], msg.p[k]);
    }
    clocks[id].p[id]++;
-   printf("(Consumidor %d) Consumiu da fila: (%d,%d,%d)\n", id, msg.p[0], msg.p[1], msg.p[2]);
+   printf("(Consumidor %d) Consumiu (%d,%d,%d) da fila -> Relogio atual: (%d,%d,%d)\n",
+          id, msg.p[0], msg.p[1], msg.p[2],
+          clocks[id].p[0], clocks[id].p[1], clocks[id].p[2]);
    
    pthread_mutex_unlock(&clockMutex[id]);
 }
@@ -81,7 +83,7 @@ Clock getClock(){
    return clock;
 }
 
-void submitClock(Clock clock){
+void submitClock(int id){
    pthread_mutex_lock(&mutex);
 
    while (clockCount == BUFFER_SIZE){
@@ -89,6 +91,7 @@ void submitClock(Clock clock){
       pthread_cond_wait(&condFull, &mutex);
    }
 
+   Clock clock = sendEvent(id);
    clockQueue[clockCount] = clock;
    clockCount++;
 
@@ -179,8 +182,7 @@ void *startProd(void* args) {
    int* v = (int *) args;
    int id = v[0], t = v[1];
    while (1){
-      Clock clock = sendEvent(id);
-      submitClock(clock);
+      submitClock(id);
       sleep(t);
    }
    return NULL;
